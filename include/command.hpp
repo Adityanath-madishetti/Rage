@@ -8,6 +8,7 @@
 #include<map>
 #include<functional>
 #include"arguments.hpp"
+#include"rageparse.hpp"
 namespace Rage{
 
 
@@ -16,7 +17,10 @@ namespace Rage{
 
     class command{
 
+
                 private :
+
+                friend class Rage::Rage_parse;
 
                 // meta data
                 std::string name;
@@ -28,9 +32,16 @@ namespace Rage{
 
                 std::vector<Argument> positionals; // predefined
                 std::vector<Argument>flags; //predefiend
-                std::map<std::string, command*> sub_commands; //predefined or registered
+                std::vector<Argument> persistent_flags;
+                std::map<std::string, command*> sub_commands_map; //predefined or registered
+                std::map<std::string, Argument> long_flags_map; //prefefined
+                std::map<char, Argument> short_flags_map;   // predefined
+                std::map<std::string, command*>persistent_flags_map;
+              
 
-                std::function<void(command*)>action;
+                std::function<void(command*)>action;  // this is call back becaus user wriet logic , mostly logic exists only if its leaf
+                std::function<std::string(command*)>help;
+                
 
 
 
@@ -39,14 +50,16 @@ namespace Rage{
                 
                 public:
                     void add_flag(const Argument& arg);
-                    void add_subcommand(command* subcmd);
+                    void add_subcommand(command* subcmd); //dont forget about persistent flag setup
                     void add_positionalArgs(const Argument& arg);
 
+                    
 
 
-                std::string getString(const std::string& name);
-                    int getInt(const std::string& name);
-                    bool getBool(const std::string& name);
+
+                    std::string get_string(const std::string& name);
+                    int get_int(const std::string& name);
+                    bool get_bool(const std::string& name);
                     std::vector<std::string> getList(const std::string& name);
                     
 
@@ -60,8 +73,16 @@ namespace Rage{
 
 
 
-                    command(){ //constructor 
-
+                    command(std::string name,std::string short_description){ //constructor 
+                            this->name=name;
+                            this->short_description=short_description;
+                            this->help=[this](Rage::command*cmd)->std::string{
+                                // some concatneted logic
+                            };
+                            this->action=[this](Rage::command*cmd)->void {
+                                this->help(this);
+                            };
+                            
                     }
 
 
