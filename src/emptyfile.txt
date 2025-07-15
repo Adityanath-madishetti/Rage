@@ -45,3 +45,76 @@ bool is_flag(const std::string& token);
 bool is_subcommand(const std::string& token, command* current);
 bool is_flag_terminator(const std::string& token);
 Argument* lookup_argument(command* current, const std::string& flag_name); // recursive
+
+
+
+
+/*
+class Command {
+public:
+    // Basic metadata
+    std::string name;               // Command name: e.g., "add", "task"
+    std::string description;        // Help text for the command
+
+    // Flags and positional arguments
+    std::vector<Argument> arguments; // List of all defined flags and positionals
+
+    // Subcommands
+    std::map<std::string, Command*> subcommands;
+
+    // Link to parent (optional but useful)
+    Command* parent = nullptr;
+
+    // Execution callback (only for leaf commands)
+    std::function<void(const Command&)> action = nullptr;
+
+    // Parsed values
+    std::map<std::string, std::string> usedArgs;  // Stores parsed values (as strings)
+
+    // Active child after parsing
+    Command* activeSubcommand = nullptr;
+
+    // -----------------------
+    // Public Methods
+    // -----------------------
+
+    // Adders
+    void addFlag(const Argument& arg);
+    void addPositional(const Argument& arg);
+    void addSubcommand(Command* sub);
+
+    // Getters (type-safe)
+    std::string getArg(const std::string& name) const;
+    bool getBool(const std::string& name) const;
+    int getInt(const std::string& name) const;
+
+    // Utilities
+    bool isLeaf() const;                // Has no subcommands
+    bool hasArg(const std::string& name) const;
+    void setAction(std::function<void(const Command&)> act);
+};
+
+
+*/
+
+
+
+🚫 A command alias has no meaning:
+❌ Without a parent
+
+❌ Outside the scope of the parent it's added to
+
+Think of them as nicknames — they only work in the neighborhood (parent) you say them in.
+
+
+🔹 When you add a command as a subcommand to a parent:
+That parent’s sub_commands_map gets updated with:
+
+["original_name"] → command
+
+And for each alias:
+
+["alias"] → command
+
+✅ Validation is done at that time only (check for name conflicts under the parent).
+

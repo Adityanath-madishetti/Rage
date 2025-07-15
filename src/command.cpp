@@ -138,22 +138,36 @@ std::string Rage::command::get_positional_arg(const std::string& arg_name){
 
 
 
+
+void Rage::command::security_check_flag_creation(std::string name, std::string long_name, char short_name){
+
+    if ( (long_name.empty() or short_name == '\0') or name.empty() ) {
+            throw std::runtime_error("long and short names cannot be empty for a flag.");
+    }
+    if(this->registeredArguments.find(name)!=this->registeredArguments.end()){
+        throw std::runtime_error("a flag or argument with  name "+ name+"is already registered under this command");
+    }   
+    if (!long_name.empty() && long_flags_map.find(long_name) != long_flags_map.end()) {
+        throw std::runtime_error("Long flag name '--" + long_name + "' already in use.");
+    }
+    if (short_name != '\0' && short_flags_map.find(short_name) != short_flags_map.end()) {
+        throw std::runtime_error("Short flag name '-" + std::string(1, short_name) + "' already in use.");
+    }
+
+}
+
+
+
 void Rage::command::add_boolean_flag(std::string name,std::string long_name,char short_name,bool default_value){
 
 
+    this->security_check_flag_creation(name,long_name,short_name);
     
-    if(this->registeredArguments.find(name)!=this->registeredArguments.end()){
-        throw std::runtime_error("a flag with  name "+ name+"is already registered under thsi command");
-        return;
-    }   
-
-    // first update registeredarguments
-
-    // you can also give error if long_name and short name are empty
-
+    // first update registeredargument
+    
     std::string new_default_value=(default_value)?"true":"false";
 
-    auto new_argument =  Flag (name, long_name,short_name,ArgType::Bool,new_default_value,false).cretaeArgument();
+    auto new_argument =  Flag (name, long_name,short_name,ArgType::Bool,new_default_value,false).createArgument();
 
     //register this in  map
     this->registeredArguments[name]=new_argument;  // registration done in registered arguments
@@ -165,6 +179,104 @@ void Rage::command::add_boolean_flag(std::string name,std::string long_name,char
 
 
 
+void Rage::command::add_int_flag(std::string name,std::string long_name,char short_name,Rage::ArgType type,Rage::int64 default_value){
+        
+        this->security_check_flag_creation(name,long_name,short_name);
+
+        std::string new_default_value = std::to_string(default_value);
+
+        auto new_argument = Flag(name,long_name,short_name,ArgType::Int,new_default_value,false).createArgument();
+
+        this->registeredArguments[name]=new_argument;  // registration done in registered arguments
+        this->long_flags_map[long_name]=name;
+        this->short_flags_map[short_name]=name;
+        flags.push_back(new_argument);
+
+}
+
+void Rage::command::add_string_flag(std::string name,std::string long_name,char short_name,Rage::ArgType type,std::string default_value,bool is_variadic){
+    
+    this->security_check_flag_creation(name,long_name,short_name);
+
+    std::string new_default_value = default_value;
+    auto new_argument = Flag(name,long_name,short_name,ArgType::String,new_default_value,is_variadic).createArgument();
+    
+    this->registeredArguments[name]=new_argument;  // registration done in registered arguments
+    this->long_flags_map[long_name]=name;
+    this->short_flags_map[short_name]=name;
+    flags.push_back(new_argument);
+
+}
+
+
+void Rage::command::add_positional_arg(const Rage::PositionalArg&p_arg){
+
+
+    if(p_arg.name.empty()){
+        throw std::runtime_error("name can not be empty for positional argument declaration");
+    }
+
+    if(this->registeredArguments.find(p_arg.name)!=this->registeredArguments.end()){
+        throw std::runtime_error("a flag or argument with  name "+ name+"is already registered under this command");
+        return;
+    }
+
+    auto new_argument =PositionalArg(p_arg.name , p_arg.required).createArgument();
+
+    this->registeredArguments[p_arg.name] = new_argument;
+    this->positionals.push_back(new_argument);
+}
+
+
+bool Rage::command::has_descendant(command* suspect) {
+    if (this == suspect) return true;
+    for (auto& [name, subcmd] : sub_commands_map) {
+        if (subcmd->has_descendant(suspect)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+
+void Rage::command::add_subcommand(command* subcmd) {
+
+    // check for existing subcommands 
+    // check for alias of newly enetring command conflct
+    // check for cycle
+    // tehn do work
+
+
+            if (this->sub_commands_map.find(subcmd->name) != this->sub_commands_map.end()) {
+                throw std::runtime_error("Subcommand or else some other subcommand alias name '" + subcmd->name + "' already exists. for this parent");
+            }
+
+
+
+
+            for (const auto& alias : subcmd->cmd_aliases) {
+                if (this->sub_commands_map.find(alias) != this->sub_commands_map.end()) {
+                        throw std::runtime_error("Alias '" + alias + "' for subcommand '" + subcmd->name + "' conflicts with an existing command or alias.");
+                }
+            }
+
+
+            if(subcmd->has_descendant(this)){
+                throw std::runtime_error("loop detected between  the subcommand: "+subcmd->name+"parent_command: "+this->name);
+            }
+
+            // nwo it means parent is ready to accept the subcomamnd
+
+            // now loop and upload aliases to subcommandx
+
+             for (const auto& alias : subcmd->cmd_aliases) {
+                this->sub_commands_map[alias]=subcmd;
+            }
+
+
+
+}
 
 
 

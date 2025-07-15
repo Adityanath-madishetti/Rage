@@ -38,7 +38,7 @@ namespace Rage{
 
 
 
-
+                std::vector<std::string> cmd_aliases; // tehse aliases are for command ndependnetly, any parentc ommand may or may not accept tehm based on cosnistency
                 std::map<std::string, command*> sub_commands_map;  //  (Predefined) subcommands
                 std::vector<Argument> positionals; // (predefined)
                 std::vector<Argument>flags; //(predefiend )
@@ -56,19 +56,20 @@ namespace Rage{
                 std::function<std::string(command*)>help; // send this as parametere
                 
 
-
-
                 command* parent_command=nullptr;
-                
+
+                //--------------------------------utils----------------------------
+                void security_check_flag_creation(std::string name, std::string long_name, char short_name);
+                bool has_descendant(command* suspect);
+
                 // --------------------------- adders ------------------------------
                 public:
                     void add_boolean_flag(std::string name,std::string long_name,char short_name,bool default_value); // bool is not allowed to be variadic;
                     void add_int_flag(std::string name,std::string long_name,char short_name,Rage::ArgType type,Rage::int64 default_value);
-                    void add_string_flag(std::string name,std::string long_name,char short_name,Rage::ArgType type,std::string default_value);
-                    void add_subcommand(command* sub_cmd); 
-                    void add_positionalArgs(const Rage::PositionalArg&p_arg); // change it as soon as possible
-                    
-                    //------------------ getters -------------------------------------
+                    void add_string_flag(std::string name,std::string long_name,char short_name,Rage::ArgType type,std::string default_value,bool is_variadic);
+                    void add_subcommand(command* sub_cmd);  // persistent flag setup is done at run time while entering into new command. not while adding subcommand
+                    void add_positional_arg(const Rage::PositionalArg&p_arg); 
+                //------------------ getters -------------------------------------
                     // for positional arg
                     std::string get_positional_arg(const std::string& name);
 
@@ -78,32 +79,52 @@ namespace Rage{
                     bool get_bool_flag(const std::string& name);
                     std::vector<std::string> get_string_list_flag(const std::string& name);
                     
-
-
-
-                  //------------------ setters -------------------------------------
+                //------------------ setters -------------------------------------
                     command& set_name(std::string);
                     command& set_long_descripion(std::string);
                     command& set_short_description(std::string);
                     command& set_action(std::function<void(command*)>); 
 
                     template<typename... varType>
-                    command& set_aliases(varType... args){
+                        command& set_aliases(varType... args) {
 
-                        // for each arg  push into aliases vector go to parent  i.e this->parent if not nullptr then put  
-                        // alias in this->command->sub_commands[arg]=this;
-
-                        //als is alias
-                        auto add_string_alias = [this](const std::string& als){
-                            this->push_back(als);
-                            if(!this->parent_command) return;
-                            this->parent_command->sub_commands_map[als]=this;
-                        };
+                            // lmbda
+                            auto validate_string_alias = [this](const std::string& alias) -> void {
+                                if (std::find(this->cmd_aliases.begin(), this->cmd_aliases.end(), alias) != this->cmd_aliases.end()) {
+                                    throw std::runtime_error("Alias '" + alias + "' is already set for this command.");
+                                }
 
 
-                        (add_string_alias(args),...); //see fold expression guide
-                        return *this;
-                    }
+                            };
+
+                            auto add_string_alias = [this](const std::string& alias) {
+                                
+
+                                // .. while adding alias here u are checking wethere parent has any registered subcommands or atelast subcommand aliases in it
+                                // if no conflicting then. push them to alias vector
+                                // while adding this as subcommand to any of the parentcommand it sees its aliases and if possible then uploads to itself 
+                                if (this->parent_command) {
+                                    if (this->parent_command->sub_commands_map.find(alias) != this->parent_command->sub_commands_map.end()) {
+                                        throw std::runtime_error("Alias '" + alias + "' conflicts with existing subcommand or alias in parent.");
+                                    }
+                                    this->parent_command->sub_commands_map[alias] = this;
+                                }
+
+
+
+                                this->cmd_aliases.push_back(alias);
+                                // DO NOT touch sub_commands_map here. do it in add_subcmmnd
+                            };
+
+
+
+                            // Validate first
+                            (validate_string_alias(args), ...);
+                            // Then add
+                            (add_string_alias(args), ...);
+
+                            return *this;
+                        }
 
 
 
@@ -140,50 +161,3 @@ namespace Rage{
 
 
 
-/*
-class Command {
-public:
-    // Basic metadata
-    std::string name;               // Command name: e.g., "add", "task"
-    std::string description;        // Help text for the command
-
-    // Flags and positional arguments
-    std::vector<Argument> arguments; // List of all defined flags and positionals
-
-    // Subcommands
-    std::map<std::string, Command*> subcommands;
-
-    // Link to parent (optional but useful)
-    Command* parent = nullptr;
-
-    // Execution callback (only for leaf commands)
-    std::function<void(const Command&)> action = nullptr;
-
-    // Parsed values
-    std::map<std::string, std::string> usedArgs;  // Stores parsed values (as strings)
-
-    // Active child after parsing
-    Command* activeSubcommand = nullptr;
-
-    // -----------------------
-    // Public Methods
-    // -----------------------
-
-    // Adders
-    void addFlag(const Argument& arg);
-    void addPositional(const Argument& arg);
-    void addSubcommand(Command* sub);
-
-    // Getters (type-safe)
-    std::string getArg(const std::string& name) const;
-    bool getBool(const std::string& name) const;
-    int getInt(const std::string& name) const;
-
-    // Utilities
-    bool isLeaf() const;                // Has no subcommands
-    bool hasArg(const std::string& name) const;
-    void setAction(std::function<void(const Command&)> act);
-};
-
-
-*/

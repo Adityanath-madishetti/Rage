@@ -63,7 +63,7 @@ namespace Rage
                         std::string default_value = "";
                         bool variadic = false;
 
-                      Argument cretaeArgument();
+                      Argument createArgument();
               public:
                       friend class Rage::command;
                       Flag(std::string name,std::string long_name,char short_name,Rage::ArgType type,std::string default_value,bool is_variadic=false){
@@ -81,7 +81,7 @@ namespace Rage
           
                 friend class Rage::command;
 
-                Argument cretaeArgument();
+                Argument createArgument();
                 public:
                 
                   
