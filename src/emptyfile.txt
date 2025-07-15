@@ -1,0 +1,47 @@
+Absolutely — here are the final clear rules I recommend for your CLI parser regarding variadic flags and positional args, based on best practices used by Git, Cobra, Clap, and argparse:
+
+✅ Final Rules: Variadic Flags & Positional Args
+✅ Rule 1: Positional args are allowed after variadic flags
+✔️ Yes, you can allow positional args to follow a variadic flag.
+
+Example:
+
+bash
+Copy
+Edit
+mycli --files a.txt b.txt main.cpp
+✅ Rule 2: End variadic flag at first token that looks like a flag
+As soon as you encounter a token starting with - or --, treat it as:
+
+A new flag
+
+Or a possible positional argument (depending on whether you support --)
+
+This helps avoid consuming positionals into variadic flags accidentally.
+
+✅ Rule 3: If a positional starts with -, force user to use -- to separate
+If a positional argument starts with -, it will be ambiguous.
+
+Require the user to write:
+
+bash
+Copy
+Edit
+mycli --files a.txt -- -file.txt
+✅ Rule 4: Support -- as a delimiter
+Everything after -- is treated as a positional argument even if it starts with -
+
+This solves ambiguity safely and professionally.
+
+✅ Rule 5: Document it clearly
+Let users know:
+
+"Use -- to signal the end of flags and the 
+
+
+
+
+bool is_flag(const std::string& token);
+bool is_subcommand(const std::string& token, command* current);
+bool is_flag_terminator(const std::string& token);
+Argument* lookup_argument(command* current, const std::string& flag_name); // recursive
