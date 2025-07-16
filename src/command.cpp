@@ -202,7 +202,7 @@ std::string Rage::command::get_positional_arg(const std::string& arg_name){
 }
 
 
-
+// here its hsould still be regsitered argumenst cause it shoudl nt conflict with any of the psoitioanals too
 
 void Rage::command::security_check_flag_creation(std::string name, std::string long_name, char short_name){
 
@@ -222,6 +222,16 @@ void Rage::command::security_check_flag_creation(std::string name, std::string l
 }
 
 
+void  Rage::command::localize_flags(Rage::Argument new_argument,std::string name,std::string long_name,char short_name){
+
+    this->registered_flag_map[name]=new_argument;
+    this->registeredArguments[name]=new_argument;  // registration done in registered arguments
+    this->long_flags_map[long_name]=name;
+    this->short_flags_map[short_name]=name;
+    flags.push_back(new_argument);
+}
+
+
 
 void Rage::command::add_boolean_flag(std::string name,std::string long_name,char short_name,bool default_value){
 
@@ -235,12 +245,8 @@ void Rage::command::add_boolean_flag(std::string name,std::string long_name,char
     auto new_argument =  Flag (name, long_name,short_name,ArgType::Bool,new_default_value,false).createArgument();
      // here name is local variable not any command attribute 
     //register this in  map
-    this->registered_flag_map[name]=new_argument;
-    this->registeredArguments[name]=new_argument;  // registration done in registered arguments
-    this->long_flags_map[long_name]=name;
-    this->short_flags_map[short_name]=name;
-    flags.push_back(new_argument);
-
+    
+    this->localize_flags(new_argument,name,long_name,short_name);
 }
 
 
@@ -253,11 +259,7 @@ void Rage::command::add_int_flag(std::string name,std::string long_name,char sho
 
         auto new_argument = Flag(name,long_name,short_name,ArgType::Int,new_default_value,false).createArgument();
          // here name is local variable not any command attribute 
-        this->registered_flag_map[name]=new_argument;
-        this->registeredArguments[name]=new_argument;  // registration done in registered arguments
-        this->long_flags_map[long_name]=name;
-        this->short_flags_map[short_name]=name;
-        flags.push_back(new_argument);
+         this->localize_flags(new_argument,name,long_name,short_name);
 
 }
 
@@ -270,11 +272,7 @@ void Rage::command::add_string_flag(std::string name,std::string long_name,char 
     
     // here name is local variable not any command attribute 
 
-    this->registered_flag_map[name]=new_argument;
-    this->registeredArguments[name]=new_argument;  // registration done in registered arguments
-    this->long_flags_map[long_name]=name;
-    this->short_flags_map[short_name]=name;
-    flags.push_back(new_argument);
+        this->localize_flags(new_argument,name,long_name,short_name);
 
 }
 
@@ -323,21 +321,18 @@ void Rage::command::add_subcommand(command* subcmd) {
                 throw std::runtime_error("Subcommand or else some other subcommand alias name '" + subcmd->name + "' already exists. for this parent");
             }
 
-
-
-
+             // check for alias of newly enetring command ,conflct or not
             for (const auto& alias : subcmd->cmd_aliases) {
                 if (this->sub_commands_map.find(alias) != this->sub_commands_map.end()) {
                         throw std::runtime_error("Alias '" + alias + "' for subcommand '" + subcmd->name + "' conflicts with an existing command or alias.");
                 }
             }
 
-
             if(subcmd->has_descendant(this)){
                 throw std::runtime_error("loop detected between  the subcommand: "+subcmd->name+"parent_command: "+this->name);
             }
 
-            // nwo it means parent is ready to accept the subcomamnd
+            // now it means parent is ready to accept the subcomamnd
 
             // now loop and upload aliases of subcommand also the subcommand itself
             this->sub_commands_map[subcmd->name]=subcmd;
@@ -349,4 +344,57 @@ void Rage::command::add_subcommand(command* subcmd) {
 }
 
 
+void Rage::command::add_persistent_flag_string(std::string name,std::string long_name,char short_name,std::string default_value,bool is_variadic){
+    // first check wether it conflicts with any  local flags or positionals from ds registered_flag_maps
+
+    this->security_check_flag_creation(name,long_name,short_name);
+
+    std::string new_default_value = default_value;
+    auto new_argument = Flag(name,long_name,short_name,ArgType::String,new_default_value,is_variadic).createArgument();
+
+    // these are done cause persistant ar normalflags at place where they are defined
+    
+    this->localize_flags(new_argument,name,long_name,short_name);
+
+    //special fpr persistant
+    this->persistent_flags.push_back(new_argument);
+    this->persistent_flags_map[name]=new_argument;
+}
+
+
+void Rage::command::add_persistent_flag_int(std::string name,std::string long_name,char short_name,Rage::int64 default_value){
+        
+        this->security_check_flag_creation(name,long_name,short_name);
+
+        std::string new_default_value = std::to_string(default_value);
+
+        auto new_argument = Flag(name,long_name,short_name,ArgType::Int,new_default_value,false).createArgument();
+         // here name is local variable not any command attribute 
+
+        this->localize_flags(new_argument,name,long_name,short_name);
+
+            //special fpr persistant
+
+         this->persistent_flags.push_back(new_argument);
+        this->persistent_flags_map[name]=new_argument;
+
+}
+
+void Rage::command::add_persistent_flag_bool(std::string name,std::string long_name,char short_name,bool default_value){
+
+
+    this->security_check_flag_creation(name,long_name,short_name);
+    // first update registeredargument
+    std::string new_default_value=(default_value)?"true":"false";
+    auto new_argument =  Flag (name, long_name,short_name,ArgType::Bool,new_default_value,false).createArgument();
+     // here name is local variable not any command attribute
+
+     //register this in  maps
+
+    this->localize_flags(new_argument,name,long_name,short_name);
+        //special for persistant
+    this->persistent_flags.push_back(new_argument);
+    this->persistent_flags_map[name]=new_argument;
+
+}
 

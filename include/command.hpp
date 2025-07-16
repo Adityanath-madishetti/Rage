@@ -41,7 +41,7 @@ namespace Rage{
                 std::vector<std::string> cmd_aliases; // these aliases are for command ndependnetly, any parentc ommand may or may not accept tehm based on cosnistency
                 std::map<std::string, command*> sub_commands_map;  //  (Predefined) subcommands
                 std::vector<Argument> positionals; // (predefined)
-                std::vector<Argument>flags; //(predefiend )
+                std::vector<Argument>flags; //(predefiend ) //also contains persitant
                 std::vector<Argument> persistent_flags; //(predefined) and are injected into child in run time when reaching that command
                 std::map<std::string, Argument> registeredArguments; // (predefined) all argments (flags and  positionals) with their internal names to arg object  (loclaised arguments)
                 std::map<std::string,Argument> registered_flag_map;
@@ -51,7 +51,7 @@ namespace Rage{
 
 
 
-               // ----------------------------------------------------------------- traversal needed ds -----------------------------------------------------------------
+               // ----------------------------------------------------------------- needed in traversals -----------------------------------------------------------------
 
                 std::map<std::string,Argument>persistent_flags_map; //(predefined) this is for  fast look of persistant flag map defined in this command and effective afetr wards.  // fill this when user adds a persistant flag
 
@@ -76,6 +76,7 @@ namespace Rage{
                 //--------------------------------utils----------------------------
                 void security_check_flag_creation(std::string name, std::string long_name, char short_name);
                 bool has_descendant(command* suspect);
+                void  localize_flags(Rage::Argument new_argument,std::string name,std::string long_name,char short_name);
 
                 // --------------------------- adders ------------------------------
                 public:
@@ -112,8 +113,6 @@ namespace Rage{
                                 if (std::find(this->cmd_aliases.begin(), this->cmd_aliases.end(), alias) != this->cmd_aliases.end()) {
                                     throw std::runtime_error("Alias '" + alias + "' is already set for this command.");
                                 }
-
-
                             };
 
                             auto add_string_alias = [this](const std::string& alias) {
@@ -136,16 +135,12 @@ namespace Rage{
                             };
 
 
-
                             // Validate first
                             (validate_string_alias(args), ...);
                             // Then add
                             (add_string_alias(args), ...);
-
                             return *this;
                         }
-
-
 
                     //constructor
                     command(std::string name,std::string short_description){ //constructor 
@@ -159,16 +154,8 @@ namespace Rage{
                             };
                             
                     }
-
                     command()=default;
-
-
     };
-
-
-
-
-
 
 }
 

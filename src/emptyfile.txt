@@ -118,3 +118,18 @@ And for each alias:
 
 ✅ Validation is done at that time only (check for name conflicts under the parent).
 
+
+
+For help ask 
+
+
+1) command level
+    1) exmaple vector   
+    2) usage field
+
+
+2) arguments
+    1)short hand ehlp  text
+    
+
+- for thsi edit the argument with help text and as that in all add flag fucntions
