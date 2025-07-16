@@ -9,7 +9,7 @@
 
 // as of now dont delete them just put aside might be useful some time
 
-Rage::Argument Rage::Flag::cretaeArgument(){
+Rage::Argument Rage::Flag::createArgument(){
     return Argument(this->name,
                     this->long_name,
                     this->short_name,
@@ -23,7 +23,7 @@ Rage::Argument Rage::Flag::cretaeArgument(){
 
 
 
-Rage::Argument Rage::PositionalArg::cretaeArgument(){
+Rage::Argument Rage::PositionalArg::createArgument(){
     return Argument(this->name,
                     this->name, //long name
                     '\0',

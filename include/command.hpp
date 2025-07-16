@@ -37,16 +37,31 @@ namespace Rage{
                 std::vector<std::string>usedPositionals; // to collect the positionals in order even though they are jumbeled between flags
 
 
-
-                std::vector<std::string> cmd_aliases; // tehse aliases are for command ndependnetly, any parentc ommand may or may not accept tehm based on cosnistency
+                //-------------------------------- localised ----------------------------------------------------------
+                std::vector<std::string> cmd_aliases; // these aliases are for command ndependnetly, any parentc ommand may or may not accept tehm based on cosnistency
                 std::map<std::string, command*> sub_commands_map;  //  (Predefined) subcommands
                 std::vector<Argument> positionals; // (predefined)
                 std::vector<Argument>flags; //(predefiend )
-                std::vector<Argument> persistent_flags; //(predefined) and are injected into child in run time when reaching taht command
-                std::map<std::string, Argument> registeredArguments; // (predefined) all argments (flags and  positionals) with their internal names to arg object 
+                std::vector<Argument> persistent_flags; //(predefined) and are injected into child in run time when reaching that command
+                std::map<std::string, Argument> registeredArguments; // (predefined) all argments (flags and  positionals) with their internal names to arg object  (loclaised arguments)
+                std::map<std::string,Argument> registered_flag_map;
+                std::map<std::string,Argument> registered_positional_arg_map;
+                // ------------------------------------------------------------------------------------------------------
 
 
-                
+
+
+               // ----------------------------------------------------------------- traversal needed ds -----------------------------------------------------------------
+
+                std::map<std::string,Argument>persistent_flags_map; //(predefined) this is for  fast look of persistant flag map defined in this command and effective afetr wards.  // fill this when user adds a persistant flag
+
+
+                //----------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+                // useful while pasring
                 std::map<std::string, std::string> long_flags_map; //(prefefined) registered  with not "name" rateher "long_name" (longname->name)
                 std::map<char, std::string> short_flags_map;   // (predefined)  registered with not "name" rateher "short_name" (shortname->name)
 
@@ -65,10 +80,14 @@ namespace Rage{
                 // --------------------------- adders ------------------------------
                 public:
                     void add_boolean_flag(std::string name,std::string long_name,char short_name,bool default_value); // bool is not allowed to be variadic;
-                    void add_int_flag(std::string name,std::string long_name,char short_name,Rage::ArgType type,Rage::int64 default_value);
-                    void add_string_flag(std::string name,std::string long_name,char short_name,Rage::ArgType type,std::string default_value,bool is_variadic);
+                    void add_int_flag(std::string name,std::string long_name,char short_name,Rage::int64 default_value);
+                    void add_string_flag(std::string name,std::string long_name,char short_name,std::string default_value,bool is_variadic);
                     void add_subcommand(command* sub_cmd);  // persistent flag setup is done at run time while entering into new command. not while adding subcommand
                     void add_positional_arg(const Rage::PositionalArg&p_arg); 
+                    void add_persistent_flag_bool(std::string name,std::string long_name,char short_name,bool default_value);
+                    void add_persistent_flag_int(std::string name,std::string long_name,char short_name,Rage::int64 default_value);
+                    void add_persistent_flag_string(std::string name,std::string long_name,char short_name,std::string default_value,bool is_variadic);
+                    
                 //------------------ getters -------------------------------------
                     // for positional arg
                     std::string get_positional_arg(const std::string& name);
