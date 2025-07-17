@@ -14,26 +14,48 @@
 namespace Rage{
 
 
-    
-
-
     class command{
 
 
                 private :
 
+                    
+                
+
                 friend class Rage::Rage_parse;
 
                 // meta data
                 std::string name;  //internal use
-                std::string short_description;
-                std::string long_description;
+                
                 std::vector<std::string> aliases;  
                 
+                // make it public if u feel its needed
+                struct Help {
+                        std::string short_description;
+                        std::string long_description;
+                        std::string usage;
+                        std::vector<std::string> examples;
 
-               // Both use internal name as keys
+                        Help() = default;
+
+                        Help(std::string short_description,
+                            std::string long_description,
+                            std::string usage,
+                            std::vector<std::string> examples)
+                            : short_description(std::move(short_description)),
+                            long_description(std::move(long_description)),
+                            usage(std::move(usage)),
+                            examples(std::move(examples)) {}
+                  };
+
+                  Help helpObj;
+                
+
+               //  use internal name as keys (these collect every thing that appeared and valid on taht command)
                 std::map<std::string, std::string> usedArgs;  //internamname->userinputvalues for them. (flags and positionasl)
-                std::map<std::string, std::vector<std::string>> usedListArgs; //internamname->userinputvalues for them ( as of now only flags are allowed)
+                std::map<std::string,std::string> usedFlagMaps;
+                // std::map<std::string,std::string>usedPositionalsMap;
+                std::map<std::string, std::vector<std::string>> usedListFlags; //internamname->userinputvalues for them ( as of now only flags are allowed)
                 std::vector<std::string>usedPositionals; // to collect the positionals in order even though they are jumbeled between flags
 
 
@@ -44,8 +66,8 @@ namespace Rage{
                 std::vector<Argument>flags; //(predefiend ) //also contains persitant
                 std::vector<Argument> persistent_flags; //(predefined) and are injected into child in run time when reaching that command
                 std::map<std::string, Argument> registeredArguments; // (predefined) all argments (flags and  positionals) with their internal names to arg object  (loclaised arguments)
-                std::map<std::string,Argument> registered_flag_map;
-                std::map<std::string,Argument> registered_positional_arg_map;
+                std::map<std::string,Argument> registered_flag_map; //predefined
+                std::map<std::string,Argument> registered_positional_arg_map; //predefined
                 // ------------------------------------------------------------------------------------------------------
 
 
@@ -54,11 +76,8 @@ namespace Rage{
                // ----------------------------------------------------------------- needed in traversals -----------------------------------------------------------------
 
                 std::map<std::string,Argument>persistent_flags_map; //(predefined) this is for  fast look of persistant flag map defined in this command and effective afetr wards.  // fill this when user adds a persistant flag
-
-
+                  // used when u need arg of persistants declared there
                 //----------------------------------------------------------------------------------------------------------------------------------
-
-
 
 
                 // useful while pasring
@@ -68,7 +87,7 @@ namespace Rage{
 
                 std::function<void(command*)>action;  // this is call back becaus user wriet logic , mostly logic exists only if its leaf
                 // when calling this as part of executing , u need to send this as parametere to action.
-                std::function<std::string(command*)>help; // send this as parametere
+                std::function<std::string(command*)>helpFunc; // send this as parametere
                 
 
                 command* parent_command=nullptr;
@@ -78,16 +97,21 @@ namespace Rage{
                 bool has_descendant(command* suspect);
                 void  localize_flags(Rage::Argument new_argument,std::string name,std::string long_name,char short_name);
 
-                // --------------------------- adders ------------------------------
                 public:
-                    void add_boolean_flag(std::string name,std::string long_name,char short_name,bool default_value); // bool is not allowed to be variadic;
-                    void add_int_flag(std::string name,std::string long_name,char short_name,Rage::int64 default_value);
-                    void add_string_flag(std::string name,std::string long_name,char short_name,std::string default_value,bool is_variadic);
+
+                  
+
+                // --------------------------- adders ------------------------------
+                    void add_boolean_flag(std::string name,std::string long_name,char short_name,bool default_value ,bool arg_req,std::string help_msg); // bool is not allowed to be variadic;
+                    void add_int_flag(std::string name,std::string long_name,char short_name,Rage::int64 default_value,bool arg_req,std::string help_msg);
+                    void add_string_flag(std::string name,std::string long_name,char short_name,std::string default_value,bool arg_req,bool is_variadic,std::string help_msg);
+
                     void add_subcommand(command* sub_cmd);  // persistent flag setup is done at run time while entering into new command. not while adding subcommand
-                    void add_positional_arg(const Rage::PositionalArg&p_arg); 
-                    void add_persistent_flag_bool(std::string name,std::string long_name,char short_name,bool default_value);
-                    void add_persistent_flag_int(std::string name,std::string long_name,char short_name,Rage::int64 default_value);
-                    void add_persistent_flag_string(std::string name,std::string long_name,char short_name,std::string default_value,bool is_variadic);
+                    void add_positional_arg(const Rage::PositionalArg&p_arg,std::string help_msg); 
+
+                    void add_persistent_flag_bool(std::string name,std::string long_name,char short_name,bool default_value,bool arg_req,std::string help_msg);
+                    void add_persistent_flag_int(std::string name,std::string long_name,char short_name,Rage::int64 default_value,bool arg_req,std::string help_msg);
+                    void add_persistent_flag_string(std::string name,std::string long_name,char short_name,std::string default_value,bool is_variadic,bool arg_req,std::string help_msg);
                     
                 //------------------ getters -------------------------------------
                     // for positional arg
@@ -103,6 +127,8 @@ namespace Rage{
                     command& set_name(std::string);
                     command& set_long_descripion(std::string);
                     command& set_short_description(std::string);
+                    command& set_usage(std::string);
+                    command& set_example(std::vector<std::string>exmaples);
                     command& set_action(std::function<void(command*)>); 
 
                     template<typename... varType>
@@ -145,14 +171,13 @@ namespace Rage{
                     //constructor
                     command(std::string name,std::string short_description){ //constructor 
                             this->name=name;
-                            this->short_description=short_description;
-                            this->help=[this](Rage::command*cmd)->std::string{
-                                // some concatneted logic
+                            this->helpObj.short_description=short_description;
+                            this->helpFunc=[this](Rage::command*cmd)->std::string{
+                            // some concatneted logic
                             };
                             this->action=[this](Rage::command*cmd)->void {
-                                this->help(this);
+                                this->helpFunc(this);
                             };
-                            
                     }
                     command()=default;
     };

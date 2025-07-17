@@ -17,7 +17,8 @@ Rage::Argument Rage::Flag::createArgument(){
                     this->default_value,
                     this->variadic,
                     false, //is_positional
-                    false // is_required
+                    this->arg_req ,// is_required
+                    this->short_help_msg
                     );
 }
 
@@ -31,6 +32,7 @@ Rage::Argument Rage::PositionalArg::createArgument(){
                     "",
                     false,
                     true, //is_positional
-                    this->required 
+                    this->required ,
+                    this->short_help_msg
                     );
 }

@@ -3,6 +3,7 @@
 
 #include "arguments.hpp"
 #include   "command.hpp"
+#include<memory>
 #include <string>;
 
  namespace Rage{
@@ -10,6 +11,8 @@
 
         private:
             Rage::command* cmd;
+            class Parse_conetxt;
+            std::unique_ptr<Rage::Rage_parse::Parse_conetxt>context_ptr;
             
 
         public:

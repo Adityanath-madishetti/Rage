@@ -11,7 +11,7 @@ Rage::command&   Rage::command::set_action (  std::function<void(command*)> call
 
 
 Rage::command& Rage::command::set_long_descripion(std::string longText){
-    this->long_description=longText;
+    this->helpObj.long_description=longText;
     return *this;
 }
 
@@ -26,9 +26,17 @@ Rage::command& Rage::command::set_name(std::string name){
 
 
 Rage::command& Rage::command::set_short_description(std::string shortText){
-    this->short_description=shortText;
+    this->helpObj.short_description=shortText;
      return *this;
 
+}
+
+Rage::command& Rage::command::set_usage(std::string usage){
+    this->helpObj.usage=usage;
+}
+
+Rage::command& Rage::command::set_example(std::vector<std::string>exmaples){
+    this->helpObj.examples=exmaples;
 }
 
 
@@ -36,33 +44,40 @@ bool Rage::command::get_bool_flag(const std::string& arg_name) {
     // Check registration
 
     Rage::Argument argument_definition;
+    command * comamnd_with_given_flag=this;
 
     if (this->registered_flag_map.find(arg_name) != this->registered_flag_map.end()) {
         argument_definition = this->registered_flag_map[arg_name];
     }else{
         //traverse parent and check for persistent flag of them
-        auto curr = this;
-        while(curr){
-            if(curr->persistent_flags_map.find(arg_name)!=curr->persistent_flags_map.end()){
-                argument_definition=curr->persistent_flags_map[arg_name];
+        comamnd_with_given_flag=comamnd_with_given_flag->parent_command;
+
+        while(comamnd_with_given_flag){
+
+            if(comamnd_with_given_flag->persistent_flags_map.find(arg_name)!=comamnd_with_given_flag->persistent_flags_map.end()){
+
+                argument_definition=comamnd_with_given_flag->persistent_flags_map[arg_name]; // the data structure used her ewill ony have flags that are pesistant
                 break;
             }
-            curr=curr->parent_command;
+            comamnd_with_given_flag=comamnd_with_given_flag->parent_command;
         }
 
-        if(curr==nullptr)
-            throw std::runtime_error("No argument with given name: " + arg_name);
+        if(comamnd_with_given_flag==nullptr)
+            throw std::runtime_error("No flag with given name: " + arg_name+". is registered");
     }
+
+    
 
 
     // Type check
     if (argument_definition.type != ArgType::Bool) {
-        throw std::runtime_error("Argument is not of (flag or boolean or  non-variadic) type" + arg_name);
+        throw std::runtime_error("no boolean flag " + arg_name+"is applicable on "+" command: "+this->name);
         return;
     }
-    auto it = usedArgs.find(arg_name);
+    // you have found that flag in some other  or this atelast
+    auto it = comamnd_with_given_flag->usedFlagMaps.find(arg_name);
     // If not provided, fall back to default
-    if (it == usedArgs.end()) {
+    if (it == usedFlagMaps.end()) {
         return argument_definition.default_value == "true";
     }
     std::string val = it->second;
@@ -79,69 +94,76 @@ bool Rage::command::get_bool_flag(const std::string& arg_name) {
 Rage::int64 Rage::command::get_int_flag(const std::string& arg_name){
 
     Rage::Argument argument_definition;
+    command * comamnd_with_given_flag=this;
 
-    if (this->registered_flag_map.find(arg_name) != this->registered_flag_map.end()) {
+    if(this->registered_flag_map.find(arg_name) != this->registered_flag_map.end()) {
         argument_definition = this->registered_flag_map[arg_name];
     }else{
         //traverse parent and check for persistent flag of them
-        auto curr = this;
-        while(curr){
-            if(curr->persistent_flags_map.find(arg_name)!=curr->persistent_flags_map.end()){
-                argument_definition=curr->persistent_flags_map[arg_name];
+        comamnd_with_given_flag=comamnd_with_given_flag->parent_command;
+        
+        while(comamnd_with_given_flag){
+
+            if(comamnd_with_given_flag->persistent_flags_map.find(arg_name)!=comamnd_with_given_flag->persistent_flags_map.end()){
+
+                argument_definition=comamnd_with_given_flag->persistent_flags_map[arg_name];
                 break;
+
             }
-            curr=curr->parent_command;
+            comamnd_with_given_flag=comamnd_with_given_flag->parent_command;
         }
 
-        if(curr==nullptr)
-            throw std::runtime_error("No argument with given name: " + arg_name);
+        if(comamnd_with_given_flag==nullptr)
+            throw std::runtime_error("No flag with given name: " + arg_name+". is registered");
     }
-
    
     // Type check
     if (argument_definition.type != ArgType::Int) {
         throw std::runtime_error("Argument is not of (int64 or boolean or  non-variadic) type" + arg_name);
         return -1;
     }
-    auto it = usedArgs.find(arg_name);
-    if (it == usedArgs.end()) {
+    auto it = comamnd_with_given_flag->usedFlagMaps.find(arg_name);
+    if (it == usedFlagMaps.end()) {
         return std::stoll(argument_definition.default_value);
     }
-    return std::stoll(it->second);
+    return std::stoll(it->second); // ? check of integer format
 }
 
 std::string Rage::command::get_string_flag(const std::string& arg_name){
 
-     Rage::Argument argument_definition;
+    Rage::Argument argument_definition;
+    command * comamnd_with_given_flag=this;
 
-    if(this->registered_flag_map.find(arg_name) != this->registered_flag_map.end()) {
+    if (this->registered_flag_map.find(arg_name) != this->registered_flag_map.end()) {
         argument_definition = this->registered_flag_map[arg_name];
     }else{
         //traverse parent and check for persistent flag of them
-        auto curr = this;
-        while(curr){
-            if(curr->persistent_flags_map.find(arg_name)!=curr->persistent_flags_map.end()){
-                argument_definition=curr->persistent_flags_map[arg_name];
+        comamnd_with_given_flag=comamnd_with_given_flag->parent_command;
+        while(comamnd_with_given_flag){
+
+            if(comamnd_with_given_flag->persistent_flags_map.find(arg_name)!=comamnd_with_given_flag->persistent_flags_map.end()){
+
+                argument_definition=comamnd_with_given_flag->persistent_flags_map[arg_name];
                 break;
             }
-            curr=curr->parent_command;
+            comamnd_with_given_flag=comamnd_with_given_flag->parent_command;
         }
 
-        if(curr==nullptr)
-            throw std::runtime_error("No argument with given name: " + arg_name);
+        if(comamnd_with_given_flag==nullptr)
+            throw std::runtime_error("No flag with given name: " + arg_name+". is registered");
     }
 
 
     // Type check
     if ( argument_definition.is_positional or  argument_definition.type != ArgType::Int or argument_definition.is_variadic ) {
-        throw std::runtime_error("Argument is not of (string or boolean or  non-variadic) type  : " + arg_name);
-        return "";
+        throw std::runtime_error("no string flag with name  " + arg_name+"is registered to "+this->name);
     }
-    auto it = usedArgs.find(arg_name);
-    if(it==usedArgs.end()){
+    
+    auto it = comamnd_with_given_flag->usedFlagMaps.find(arg_name);
+    if(it==comamnd_with_given_flag->usedFlagMaps.end()){
         return argument_definition.default_value;
     }
-    return  usedArgs[arg_name];
+    return  comamnd_with_given_flag->usedFlagMaps[arg_name];
 }
 
 
@@ -150,33 +172,38 @@ std::string Rage::command::get_string_flag(const std::string& arg_name){
 std::vector<std::string> Rage::command::get_string_list_flag(const std::string& arg_name){
 
     Rage::Argument argument_definition;
+    command * comamnd_with_given_flag=this;
 
-    if(this->registered_flag_map.find(arg_name) != this->registered_flag_map.end()) {
+    if (this->registered_flag_map.find(arg_name) != this->registered_flag_map.end()) {
         argument_definition = this->registered_flag_map[arg_name];
     }else{
         //traverse parent and check for persistent flag of them
-        auto curr = this;
-        while(curr){
-            if(curr->persistent_flags_map.find(arg_name)!=curr->persistent_flags_map.end()){
-                argument_definition=curr->persistent_flags_map[arg_name];
+        comamnd_with_given_flag=comamnd_with_given_flag->parent_command;
+
+        while(comamnd_with_given_flag){
+
+            if(comamnd_with_given_flag->persistent_flags_map.find(arg_name)!=comamnd_with_given_flag->persistent_flags_map.end()){
+
+                argument_definition=comamnd_with_given_flag->persistent_flags_map[arg_name];
                 break;
+
             }
-            curr=curr->parent_command;
+            comamnd_with_given_flag=comamnd_with_given_flag->parent_command;
         }
 
-        if(curr==nullptr)
-            throw std::runtime_error("No argument with given name: " + arg_name);
+        if(comamnd_with_given_flag==nullptr)
+            throw std::runtime_error("No flag with given name: " + arg_name+". is registered");
     }
 
-    if (argument_definition.is_positional or  (not argument_definition.is_variadic) ){
+    if ((not argument_definition.is_variadic) ){
         throw std::runtime_error("No Variadic argument with given name: " + arg_name);
-        return {};
     }
-    auto it=usedListArgs.find(arg_name);
-    if(it==usedListArgs.end()){
+    auto it=comamnd_with_given_flag->usedListFlags.find(arg_name);
+
+    if(it==comamnd_with_given_flag->usedListFlags.end()){
         return {argument_definition.default_value};
     }
-    return usedListArgs[arg_name];
+    return comamnd_with_given_flag->usedListFlags[arg_name];
 }
 
 
@@ -202,7 +229,7 @@ std::string Rage::command::get_positional_arg(const std::string& arg_name){
 }
 
 
-// here its hsould still be regsitered argumenst cause it shoudl nt conflict with any of the psoitioanals too
+// here its should still be `regsitered argumenst` cause it should not conflict with any of the psoitioanals too
 
 void Rage::command::security_check_flag_creation(std::string name, std::string long_name, char short_name){
 
@@ -224,8 +251,8 @@ void Rage::command::security_check_flag_creation(std::string name, std::string l
 
 void  Rage::command::localize_flags(Rage::Argument new_argument,std::string name,std::string long_name,char short_name){
 
-    this->registered_flag_map[name]=new_argument;
     this->registeredArguments[name]=new_argument;  // registration done in registered arguments
+    this->registered_flag_map[name]=new_argument;
     this->long_flags_map[long_name]=name;
     this->short_flags_map[short_name]=name;
     flags.push_back(new_argument);
@@ -233,7 +260,7 @@ void  Rage::command::localize_flags(Rage::Argument new_argument,std::string name
 
 
 
-void Rage::command::add_boolean_flag(std::string name,std::string long_name,char short_name,bool default_value){
+void Rage::command::add_boolean_flag(std::string name,std::string long_name,char short_name,bool default_value,bool arg_req,std::string help_msg){
 
 
     this->security_check_flag_creation(name,long_name,short_name);
@@ -242,7 +269,9 @@ void Rage::command::add_boolean_flag(std::string name,std::string long_name,char
     
     std::string new_default_value=(default_value)?"true":"false";
 
-    auto new_argument =  Flag (name, long_name,short_name,ArgType::Bool,new_default_value,false).createArgument();
+    bool not_variadic=true;
+
+    auto new_argument =  Flag (name, long_name,short_name,ArgType::Bool,help_msg,new_default_value,not_variadic, arg_req).createArgument();
      // here name is local variable not any command attribute 
     //register this in  map
     
@@ -251,24 +280,26 @@ void Rage::command::add_boolean_flag(std::string name,std::string long_name,char
 
 
 
-void Rage::command::add_int_flag(std::string name,std::string long_name,char short_name,Rage::int64 default_value){
+void Rage::command::add_int_flag(std::string name,std::string long_name,char short_name,Rage::int64 default_value,bool arg_req,std::string help_msg){
         
         this->security_check_flag_creation(name,long_name,short_name);
 
         std::string new_default_value = std::to_string(default_value);
 
-        auto new_argument = Flag(name,long_name,short_name,ArgType::Int,new_default_value,false).createArgument();
+        bool not_variadic=true;
+
+        auto new_argument = Flag(name,long_name,short_name,ArgType::Int,help_msg,new_default_value,not_variadic, arg_req).createArgument();
          // here name is local variable not any command attribute 
          this->localize_flags(new_argument,name,long_name,short_name);
 
 }
 
-void Rage::command::add_string_flag(std::string name,std::string long_name,char short_name,std::string default_value,bool is_variadic){
+void Rage::command::add_string_flag(std::string name,std::string long_name,char short_name,std::string default_value,bool is_variadic,bool arg_req,std::string help_msg){
     
     this->security_check_flag_creation(name,long_name,short_name);
 
     std::string new_default_value = default_value;
-    auto new_argument = Flag(name,long_name,short_name,ArgType::String,new_default_value,is_variadic).createArgument();
+    auto new_argument = Flag(name,long_name,short_name,ArgType::String,help_msg,new_default_value,is_variadic, arg_req).createArgument();
     
     // here name is local variable not any command attribute 
 
@@ -277,7 +308,7 @@ void Rage::command::add_string_flag(std::string name,std::string long_name,char 
 }
 
 
-void Rage::command::add_positional_arg(const Rage::PositionalArg&p_arg){
+void Rage::command::add_positional_arg(const Rage::PositionalArg&p_arg,std::string help_msg){
 
 
     if(p_arg.name.empty()){
@@ -289,7 +320,7 @@ void Rage::command::add_positional_arg(const Rage::PositionalArg&p_arg){
         return;
     }
 
-    auto new_argument =PositionalArg(p_arg.name , p_arg.required).createArgument();
+    auto new_argument =PositionalArg(p_arg.name ,help_msg, p_arg.required).createArgument();
 
     this->registered_positional_arg_map[p_arg.name]=new_argument;
     this->registeredArguments[p_arg.name] = new_argument;
@@ -344,13 +375,14 @@ void Rage::command::add_subcommand(command* subcmd) {
 }
 
 
-void Rage::command::add_persistent_flag_string(std::string name,std::string long_name,char short_name,std::string default_value,bool is_variadic){
+void Rage::command::add_persistent_flag_string(std::string name,std::string long_name,char short_name,std::string default_value,bool is_variadic,bool arg_req,std::string help_msg){
     // first check wether it conflicts with any  local flags or positionals from ds registered_flag_maps
 
     this->security_check_flag_creation(name,long_name,short_name);
+    // so even persistant flags should not get conflicted witha ny of the local flags in taht command
 
     std::string new_default_value = default_value;
-    auto new_argument = Flag(name,long_name,short_name,ArgType::String,new_default_value,is_variadic).createArgument();
+    auto new_argument = Flag(name,long_name,short_name,ArgType::String,help_msg,new_default_value,is_variadic, arg_req).createArgument();
 
     // these are done cause persistant ar normalflags at place where they are defined
     
@@ -362,13 +394,14 @@ void Rage::command::add_persistent_flag_string(std::string name,std::string long
 }
 
 
-void Rage::command::add_persistent_flag_int(std::string name,std::string long_name,char short_name,Rage::int64 default_value){
+void Rage::command::add_persistent_flag_int(std::string name,std::string long_name,char short_name,Rage::int64 default_value,bool arg_req,std::string help_msg){
         
         this->security_check_flag_creation(name,long_name,short_name);
 
         std::string new_default_value = std::to_string(default_value);
+        bool not_variadic=true;
 
-        auto new_argument = Flag(name,long_name,short_name,ArgType::Int,new_default_value,false).createArgument();
+        auto new_argument = Flag(name,long_name,short_name,ArgType::Int,help_msg,new_default_value,not_variadic, arg_req).createArgument();
          // here name is local variable not any command attribute 
 
         this->localize_flags(new_argument,name,long_name,short_name);
@@ -380,13 +413,16 @@ void Rage::command::add_persistent_flag_int(std::string name,std::string long_na
 
 }
 
-void Rage::command::add_persistent_flag_bool(std::string name,std::string long_name,char short_name,bool default_value){
+void Rage::command::add_persistent_flag_bool(std::string name,std::string long_name,char short_name,bool default_value,bool arg_req,std::string help_msg){
 
 
     this->security_check_flag_creation(name,long_name,short_name);
     // first update registeredargument
     std::string new_default_value=(default_value)?"true":"false";
-    auto new_argument =  Flag (name, long_name,short_name,ArgType::Bool,new_default_value,false).createArgument();
+
+    bool not_variadic=true;
+
+    auto new_argument =  Flag (name, long_name,short_name,ArgType::Bool,help_msg,new_default_value,not_variadic, arg_req).createArgument();
      // here name is local variable not any command attribute
 
      //register this in  maps
@@ -397,4 +433,3 @@ void Rage::command::add_persistent_flag_bool(std::string name,std::string long_n
     this->persistent_flags_map[name]=new_argument;
 
 }
-
