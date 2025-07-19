@@ -133,3 +133,9 @@ For help ask
     
 
 - for thsi edit the argument with help text and as that in all add flag fucntions
+
+
+
+// 
+persistent flags calculation is done by going backward
+so while running u need to put them back in their place its better

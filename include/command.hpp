@@ -1,26 +1,21 @@
 #ifndef COMMAND_H
 #define COMMAND_H
-
 #include<iostream>
 #include<string>
 #include<vector>
 #include<unordered_map>
 #include<map>
 #include<functional>
-#include"arguments.hpp"
-#include"rageparse.hpp"
 #include <type_traits>
 #include"Ragetypes.hpp"
+#include "arguments.hpp"
 namespace Rage{
 
-
+    class Rage_parse;  // forward declaration to make friends
     class command{
 
 
                 private :
-
-                    
-                
 
                 friend class Rage::Rage_parse;
 
@@ -87,7 +82,7 @@ namespace Rage{
 
                 std::function<void(command*)>action;  // this is call back becaus user wriet logic , mostly logic exists only if its leaf
                 // when calling this as part of executing , u need to send this as parametere to action.
-                std::function<std::string(command*)>helpFunc; // send this as parametere
+                std::function<void(command*)>helpFunc; // send this as parametere
                 
 
                 command* parent_command=nullptr;
@@ -141,7 +136,7 @@ namespace Rage{
                                 }
                             };
 
-                            auto add_string_alias = [this](const std::string& alias) {
+                            auto add_string_alias = [this](const std::string alias) {
                                 
 
                                 // .. while adding alias here u are checking wethere parent has any registered subcommands or atelast subcommand aliases in it
@@ -172,7 +167,7 @@ namespace Rage{
                     command(std::string name,std::string short_description){ //constructor 
                             this->name=name;
                             this->helpObj.short_description=short_description;
-                            this->helpFunc=[this](Rage::command*cmd)->std::string{
+                            this->helpFunc=[this](Rage::command*cmd)->void{
                             // some concatneted logic
                             };
                             this->action=[this](Rage::command*cmd)->void {

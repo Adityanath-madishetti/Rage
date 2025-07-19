@@ -1,5 +1,4 @@
 #include"arguments.hpp"
-#include"command.hpp"
 #include<vector>
 #include<string>
 #include<unordered_map>
@@ -24,15 +23,15 @@ Rage::Argument Rage::Flag::createArgument(){
 
 
 
-Rage::Argument Rage::PositionalArg::createArgument(){
+Rage::Argument Rage::PositionalArg::createArgument() {
     return Argument(this->name,
-                    this->name, //long name
+                    this->name,
                     '\0',
                     ArgType::String,
                     "",
                     false,
-                    true, //is_positional
-                    this->required ,
+                    true,
+                    this->required,
                     this->short_help_msg
                     );
 }

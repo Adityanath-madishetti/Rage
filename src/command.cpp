@@ -33,10 +33,12 @@ Rage::command& Rage::command::set_short_description(std::string shortText){
 
 Rage::command& Rage::command::set_usage(std::string usage){
     this->helpObj.usage=usage;
+    return *this;
 }
 
 Rage::command& Rage::command::set_example(std::vector<std::string>exmaples){
     this->helpObj.examples=exmaples;
+    return *this;
 }
 
 
@@ -72,7 +74,7 @@ bool Rage::command::get_bool_flag(const std::string& arg_name) {
     // Type check
     if (argument_definition.type != ArgType::Bool) {
         throw std::runtime_error("no boolean flag " + arg_name+"is applicable on "+" command: "+this->name);
-        return;
+     
     }
     // you have found that flag in some other  or this atelast
     auto it = comamnd_with_given_flag->usedFlagMaps.find(arg_name);
