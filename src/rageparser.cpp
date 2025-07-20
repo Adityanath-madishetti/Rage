@@ -58,7 +58,28 @@ std::vector<Rage::RageParse::Token> Rage::RageParse::Tokenizer
                 tokens.emplace_back(TokenType::LONG_FLAG,rawToken,rawToken);
             }   
         }else if(rawToken.size()>=2 and rawToken[0]=='-' and rawToken[1]!='-'){ //short flags
-            
+            rawToken=rawToken.substr(1); //remove '-'
+
+            if(rawToken.find('=')!=std::string::npos){
+                 //left of it is (grouped or jsut one)flag right of it is value
+                  int it=rawToken.find('=');
+                std::string actual_flags = rawToken.substr(0,it);
+                std::string flag_value = rawToken.substr(it);
+
+                if(actual_flags.size()==1){
+                     tokens.emplace_back(TokenType::SHORT_FLAG,rawToken,actual_flags);
+                }else{
+                    // >=1 size
+                    tokens.emplace_back(TokenType::SHORT_FLAG_GROUPED,rawToken,actual_flags);
+                }
+                  tokens.emplace_back(TokenType::VALUE,rawToken,flag_value);
+            }else{
+                if(rawToken.size()>1){
+                    tokens.emplace_back(TokenType::SHORT_FLAG_GROUPED,rawToken,rawToken);
+                }else{
+                    tokens.emplace_back(TokenType::SHORT_FLAG,rawToken,rawToken);
+                }
+            }
         }
     }
 }
