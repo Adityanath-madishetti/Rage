@@ -11,13 +11,13 @@
 #include "arguments.hpp"
 namespace Rage{
 
-    class Rage_parse;  // forward declaration to make friends
+    class RageParse;  // forward declaration to make friends
     class command{
 
 
                 private :
 
-                friend class Rage::Rage_parse;
+                friend class Rage::RageParse;
 
                 // meta data
                 std::string name;  //internal use

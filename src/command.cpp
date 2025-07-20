@@ -273,7 +273,7 @@ void Rage::command::add_boolean_flag(std::string name,std::string long_name,char
 
     bool not_variadic=true;
 
-    auto new_argument =  Flag (name, long_name,short_name,ArgType::Bool,help_msg,new_default_value,not_variadic, arg_req).createArgument();
+    auto new_argument =  Flag (name, long_name,short_name,ArgType::Bool,help_msg,new_default_value,not_variadic, arg_req).create_argument();
      // here name is local variable not any command attribute 
     //register this in  map
     
@@ -290,7 +290,7 @@ void Rage::command::add_int_flag(std::string name,std::string long_name,char sho
 
         bool not_variadic=true;
 
-        auto new_argument = Flag(name,long_name,short_name,ArgType::Int,help_msg,new_default_value,not_variadic, arg_req).createArgument();
+        auto new_argument = Flag(name,long_name,short_name,ArgType::Int,help_msg,new_default_value,not_variadic, arg_req).create_argument();
          // here name is local variable not any command attribute 
          this->localize_flags(new_argument,name,long_name,short_name);
 
@@ -301,7 +301,7 @@ void Rage::command::add_string_flag(std::string name,std::string long_name,char 
     this->security_check_flag_creation(name,long_name,short_name);
 
     std::string new_default_value = default_value;
-    auto new_argument = Flag(name,long_name,short_name,ArgType::String,help_msg,new_default_value,is_variadic, arg_req).createArgument();
+    auto new_argument = Flag(name,long_name,short_name,ArgType::String,help_msg,new_default_value,is_variadic, arg_req).create_argument();
     
     // here name is local variable not any command attribute 
 
@@ -322,7 +322,7 @@ void Rage::command::add_positional_arg(const Rage::PositionalArg&p_arg,std::stri
         return;
     }
 
-    auto new_argument =PositionalArg(p_arg.name ,help_msg, p_arg.required).createArgument();
+    auto new_argument =PositionalArg(p_arg.name ,help_msg, p_arg.required).create_argument();
 
     this->registered_positional_arg_map[p_arg.name]=new_argument;
     this->registeredArguments[p_arg.name] = new_argument;
@@ -384,7 +384,7 @@ void Rage::command::add_persistent_flag_string(std::string name,std::string long
     // so even persistant flags should not get conflicted witha ny of the local flags in taht command
 
     std::string new_default_value = default_value;
-    auto new_argument = Flag(name,long_name,short_name,ArgType::String,help_msg,new_default_value,is_variadic, arg_req).createArgument();
+    auto new_argument = Flag(name,long_name,short_name,ArgType::String,help_msg,new_default_value,is_variadic, arg_req).create_argument();
 
     // these are done cause persistant ar normalflags at place where they are defined
     
@@ -403,7 +403,7 @@ void Rage::command::add_persistent_flag_int(std::string name,std::string long_na
         std::string new_default_value = std::to_string(default_value);
         bool not_variadic=true;
 
-        auto new_argument = Flag(name,long_name,short_name,ArgType::Int,help_msg,new_default_value,not_variadic, arg_req).createArgument();
+        auto new_argument = Flag(name,long_name,short_name,ArgType::Int,help_msg,new_default_value,not_variadic, arg_req).create_argument();
          // here name is local variable not any command attribute 
 
         this->localize_flags(new_argument,name,long_name,short_name);
@@ -424,7 +424,7 @@ void Rage::command::add_persistent_flag_bool(std::string name,std::string long_n
 
     bool not_variadic=true;
 
-    auto new_argument =  Flag (name, long_name,short_name,ArgType::Bool,help_msg,new_default_value,not_variadic, arg_req).createArgument();
+    auto new_argument =  Flag (name, long_name,short_name,ArgType::Bool,help_msg,new_default_value,not_variadic, arg_req).create_argument();
      // here name is local variable not any command attribute
 
      //register this in  maps
