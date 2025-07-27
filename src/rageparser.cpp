@@ -38,10 +38,26 @@ std::vector<Rage::RageParse::Token> Rage::RageParse::Tokenizer
 
     std::vector<Rage::RageParse::Token> tokens;
 
+    auto processValue = [](std::string value)->std::string {
+        auto index1 = value.find("\"");
+
+        if(index1!=std::string::npos){
+             value = value.substr(index1+1); 
+             index1 = value.find("\"");
+             value = value.substr(0,index1-0+1);
+             return value;
+        }else{
+            return value;
+        }
+
+
+    };
+
     for (auto rawToken : RawTokens) {
 
         //long flags
         if( rawToken.size()>=2 and rawToken.substr(0,2)=="--"){// long-flag
+            // START IF
             //it can be = syntax
             // it can be flag-argument syntax without argument
             rawToken=rawToken.substr(2);
@@ -51,13 +67,17 @@ std::vector<Rage::RageParse::Token> Rage::RageParse::Tokenizer
                 std::string flag_name = rawToken.substr(0,it);
                 std::string flag_value = rawToken.substr(it);
                 tokens.emplace_back(TokenType::LONG_FLAG,rawToken,flag_name);
+                // processing the value is needed 
+                flag_value=processValue(flag_value);
                 tokens.emplace_back(TokenType::VALUE,rawToken,flag_value);
             }else{
                 // no equal to is found
                 // so just a flag (though may not be valid)
                 tokens.emplace_back(TokenType::LONG_FLAG,rawToken,rawToken);
             }   
+            // END IF
         }else if(rawToken.size()>=2 and rawToken[0]=='-' and rawToken[1]!='-'){ //short flags
+            //START IF
             rawToken=rawToken.substr(1); //remove '-'
 
             if(rawToken.find('=')!=std::string::npos){
@@ -72,6 +92,9 @@ std::vector<Rage::RageParse::Token> Rage::RageParse::Tokenizer
                     // >=1 size
                     tokens.emplace_back(TokenType::SHORT_FLAG_GROUPED,rawToken,actual_flags);
                 }
+
+                // processing the value i.e removing "" if needed 
+                flag_value= processValue(flag_value);
                   tokens.emplace_back(TokenType::VALUE,rawToken,flag_value);
             }else{
                 if(rawToken.size()>1){
@@ -80,6 +103,7 @@ std::vector<Rage::RageParse::Token> Rage::RageParse::Tokenizer
                     tokens.emplace_back(TokenType::SHORT_FLAG,rawToken,rawToken);
                 }
             }
+            // ENDIF
         }
     }
 }
